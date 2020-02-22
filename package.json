@@ -1,0 +1,25 @@
+{
+  "name": "auth1-project",
+  "version": "1.0.0",
+  "description": "## Topics",
+  "main": "index.js",
+  "scripts": {
+    "server": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NathanNNguyen/node-auth1-project.git"
+  },
+  "author": "Nathan Nguyen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NathanNNguyen/node-auth1-project/issues"
+  },
+  "homepage": "https://github.com/NathanNNguyen/node-auth1-project#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "knex": "^0.20.10",
+    "nodemon": "^2.0.2",
+    "sqlite3": "^4.1.1"
+  }
+}
