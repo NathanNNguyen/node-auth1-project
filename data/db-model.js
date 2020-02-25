@@ -7,7 +7,7 @@ module.exports = {
 }
 
 function findUsers() {
-  return db('users');
+  return db('users as u').select('u.id', 'u.username');
 };
 
 function add(userData) {

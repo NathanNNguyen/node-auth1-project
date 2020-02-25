@@ -1,10 +1,26 @@
 const express = require('express');
 const db = require('./data/db-model.js');
 const bcrypt = require('bcryptjs');
+const session = require('express-session');
 
 const server = express();
 
+// set up a sessionConfig obj
+const sessionConfig = {
+  name: 'coding',
+  secret: 'lambda school',
+  cookie: {
+    maxAge: 1000 * 60 * 60,
+    secure: false,
+    httpOnly: true
+  },
+  resave: false,
+  saveUninitialized: false
+}
+
 server.use(express.json());
+
+server.use(session(sessionConfig));
 
 server.get('/', (req, res) => {
   res.send(`It's working`);
@@ -14,6 +30,9 @@ server.post('/api/register', async (req, res) => {
   const user = req.body;
   user.password = bcrypt.hashSync(user.password, 10); // hash password
   try {
+    // create a session and send back cookie are being taken care of by express-session library
+    req.session.user = user; // req.session already created, this just add the user info to the session
+
     const inserted = await db.add(user);
     res.status(201).json(inserted);
   }
@@ -27,7 +46,10 @@ server.post('/api/login', async (req, res) => {
   try {
     const user = await db.findBy({ username });
     if (user && bcrypt.compareSync(password, user.password)) { // real password first then db password
-      res.status(200).json({ message: `Welcome ${user.username}` })
+
+      // create a session and send back cookie are being taken care of by express-session library
+      req.session.user = user; // req.session already created, this just add the user info to the session
+      res.status(200).json({ message: `Welcome ${user.username} with a cookie` })
     } else {
       res.status(401).json({ message: `Incorrect username or password` })
     }
@@ -47,22 +69,29 @@ server.get('/api/users', restricted, async (req, res) => {
   }
 });
 
-async function restricted(req, res, next) {
-  const { username, password } = req.headers;
-  try {
-    if (username && password) {
-      const user = await db.findBy({ username })
-      if (user && bcrypt.compareSync(password, user.password)) {
-        next();
+server.get('/api/logout', (req, res) => {
+  if (req.session) {
+    req.session.destroy(err => {
+      if (err) {
+        res.json({ message: 'Something went wrong' })
       } else {
-        res.status(401).json({ message: 'Invalid credentials' })
+        res.json({ message: 'You have been successfully logged out' })
       }
-    } else {
-      res.status(400).json({ message: 'Must have valid username / password' })
-    }
+    })
   }
-  catch (err) {
-    res.status(500).json({ message: 'Unexpected error' })
+})
+
+function restricted(req, res, next) {
+  // as long as someone has username and password
+  // that we already validated
+  // they should be able to access
+  // can't be using headers, grab cookie instead
+  // session must be created and must have user info
+
+  if (req.session && req.session.user) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Invalid credentials' })
   }
 }
 
