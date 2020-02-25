@@ -3,7 +3,11 @@ const db = require('./data/db-model.js');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
 
+const connectSessionKnex = require('connect-session-knex'); // step 1 of storing the session in the db
+
 const server = express();
+
+const KnexSessionConnect = connectSessionKnex(session); // step 2 of storing the session in the db
 
 // set up a sessionConfig obj
 const sessionConfig = {
@@ -15,7 +19,16 @@ const sessionConfig = {
     httpOnly: true
   },
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+
+  // store the session in the db instead (step 3)
+  store: new KnexSessionConnect({
+    knex: require('./data/db-config.js'),
+    tablename: 'sessions',
+    sidfieldname: 'sid',
+    createtable: 'true',
+    clearInterval: 1000 * 60 * 60
+  })
 }
 
 server.use(express.json());
@@ -75,7 +88,7 @@ server.get('/api/logout', (req, res) => {
       if (err) {
         res.json({ message: 'Something went wrong' })
       } else {
-        res.json({ message: 'You have been successfully logged out' })
+        res.send(`You have successfully logged out`)
       }
     })
   }
